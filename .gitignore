@@ -1,0 +1,21 @@
+# Rust build artifacts
+target/
+**/*.rs.bk
+
+# Boot and disk build files
+build/
+*.img
+*.iso
+
+# Logs & temp test files
+*.log
+temp*
+*.tmp
+
+# System files
+Thumbs.db
+.DS_Store
+
+# Archives & Releases
+*.zip
+*.tar.gz

@@ -1,0 +1,32 @@
+# THIRD PARTY SOFTWARE NOTICES AND INFORMATION
+
+Veyron OS is an original operating system written FROM SCRATCH in Rust and assembly.
+It is NOT based on Linux, Android, BSD, Darwin, or any preexisting operating system kernel.
+
+The following third-party components are allowed and catalogued below:
+
+1. Limine Bootloader Protocol & EFI / BIOS binaries
+   - Project: Limine Bootloader (https://github.com/limine-bootloader/limine)
+   - License: 2-Clause BSD License
+   - Usage: UEFI (`BOOTX64.EFI`) and BIOS stage loaders (`limine-bios.sys`) for booting the x86_64 higher-half ELF kernel.
+
+2. wasm3 (WebAssembly Runtime)
+   - Project: wasm3 (https://github.com/wasm3/wasm3)
+   - License: MIT License
+   - Usage: Embedded WebAssembly bytecode interpreter for running compiled portable binaries (including DOOM).
+
+3. stb_truetype & stb_image
+   - Author: Sean Barrett (stb libraries)
+   - License: Public Domain / MIT Dual License
+   - Usage: TrueType font vector rendering and image loading primitives.
+
+4. BearSSL / mbedTLS
+   - Project: BearSSL (https://bearssl.org) / mbedTLS
+   - License: MIT License / Apache 2.0
+   - Usage: Cryptographic TLS/SSL layer for HTTPS web requests over Veyron TCP/IP stack.
+
+All other kernel subsystems (GDT, IDT, PIC, APIC, PIT, PMM, VMM, Kernel Heap, Scheduler,
+Syscalls, AHCI SATA driver, ATA PIO driver, PS/2 Keyboard/Mouse drivers, PCI Bus Scanner,
+FAT32 Filesystem, VFS abstraction layer, Fluent Compositor, Window Server, GUI Toolkit,
+CMD Shell, File Explorer, Notepad, Paint, Calculator, Task Manager, Settings, and Native
+TCP/IP Stack) are 100% original code written from scratch for Veyron OS.

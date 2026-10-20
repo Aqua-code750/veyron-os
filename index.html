@@ -1,0 +1,1596 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Veyron OS - Windows 11 Fluent Desktop</title>
+  <link rel="icon" type="image/png" href="icons/icon32.png">
+  <style>
+    /* ==========================================================================
+       CSS VARIABLES & THEMES (Fluent Windows 11 Mica & Acrylic)
+       ========================================================================== */
+    :root {
+      --accent-color: #0078d4;
+      --accent-hover: #0086f0;
+      --accent-active: #006cc1;
+      --taskbar-bg: rgba(30, 41, 59, 0.75);
+      --taskbar-border: rgba(255, 255, 255, 0.08);
+      --window-bg: rgba(32, 32, 32, 0.85);
+      --window-border: rgba(255, 255, 255, 0.12);
+      --window-header: rgba(43, 45, 48, 0.9);
+      --menu-bg: rgba(30, 41, 59, 0.85);
+      --card-bg: rgba(255, 255, 255, 0.05);
+      --card-hover: rgba(255, 255, 255, 0.09);
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --shadow-elevation: 0 16px 36px rgba(0, 0, 0, 0.55), 0 4px 12px rgba(0, 0, 0, 0.35);
+      --radius-win: 10px;
+      --radius-menu: 12px;
+      --font-family: 'Segoe UI Variable Display', 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
+    }
+
+    [data-theme="light"] {
+      --taskbar-bg: rgba(243, 243, 243, 0.82);
+      --taskbar-border: rgba(0, 0, 0, 0.1);
+      --window-bg: rgba(255, 255, 255, 0.9);
+      --window-border: rgba(0, 0, 0, 0.12);
+      --window-header: rgba(245, 245, 245, 0.95);
+      --menu-bg: rgba(243, 243, 243, 0.9);
+      --card-bg: rgba(0, 0, 0, 0.04);
+      --card-hover: rgba(0, 0, 0, 0.08);
+      --text-main: #0f172a;
+      --text-muted: #64748b;
+      --shadow-elevation: 0 16px 36px rgba(0, 0, 0, 0.18), 0 4px 12px rgba(0, 0, 0, 0.08);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    body, html {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      font-family: var(--font-family);
+      font-size: 13px;
+      color: var(--text-main);
+      background-color: #0f172a;
+    }
+
+    /* Desktop Wallpaper */
+    #desktop {
+      position: absolute;
+      inset: 0;
+      background-size: cover;
+      background-position: center;
+      transition: background-image 0.5s ease;
+      overflow: hidden;
+    }
+
+    /* Marquee Selection */
+    #selection-box {
+      position: absolute;
+      display: none;
+      border: 1px solid var(--accent-color);
+      background: rgba(0, 120, 212, 0.2);
+      pointer-events: none;
+      z-index: 5;
+    }
+
+    /* Desktop Icons Grid */
+    #desktop-icons {
+      position: absolute;
+      top: 16px;
+      left: 16px;
+      bottom: 60px;
+      display: flex;
+      flex-direction: column;
+      flex-wrap: wrap;
+      align-content: flex-start;
+      gap: 12px;
+      z-index: 10;
+    }
+
+    .desktop-icon {
+      width: 82px;
+      height: 86px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      border-radius: 6px;
+      border: 1px solid transparent;
+      padding: 6px 4px;
+      cursor: pointer;
+      text-align: center;
+      transition: background 0.15s, border-color 0.15s;
+    }
+
+    .desktop-icon:hover {
+      background: rgba(255, 255, 255, 0.08);
+      border-color: rgba(255, 255, 255, 0.1);
+    }
+
+    .desktop-icon.selected {
+      background: rgba(0, 120, 212, 0.3) !important;
+      border-color: rgba(0, 120, 212, 0.6) !important;
+    }
+
+    .desktop-icon svg {
+      width: 40px;
+      height: 40px;
+      margin-bottom: 6px;
+      filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.4));
+    }
+
+    .desktop-icon span {
+      font-size: 11.5px;
+      font-weight: 500;
+      text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9);
+      line-height: 1.2;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+    }
+
+    /* ==========================================================================
+       WINDOWS & WINDOW MANAGER
+       ========================================================================== */
+    .window {
+      position: absolute;
+      display: flex;
+      flex-direction: column;
+      background: var(--window-bg);
+      backdrop-filter: blur(35px) saturate(180%);
+      -webkit-backdrop-filter: blur(35px) saturate(180%);
+      border: 1px solid var(--window-border);
+      border-radius: var(--radius-win);
+      box-shadow: var(--shadow-elevation);
+      overflow: hidden;
+      min-width: 320px;
+      min-height: 220px;
+      z-index: 20;
+      transition: opacity 0.2s, transform 0.2s;
+    }
+
+    .window.active {
+      border-color: rgba(0, 120, 212, 0.45);
+      box-shadow: var(--shadow-elevation), 0 0 0 1px rgba(0, 120, 212, 0.25);
+    }
+
+    .window.maximized {
+      top: 0 !important;
+      left: 0 !important;
+      width: 100vw !important;
+      height: calc(100vh - 48px) !important;
+      border-radius: 0 !important;
+      border: none !important;
+    }
+
+    .window.minimized {
+      opacity: 0;
+      transform: scale(0.85) translateY(60px);
+      pointer-events: none;
+    }
+
+    /* Window Header / Titlebar */
+    .window-header {
+      height: 36px;
+      background: var(--window-header);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 0 0 12px;
+      cursor: move;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    }
+
+    .window-title {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--text-main);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .window-title svg {
+      width: 16px;
+      height: 16px;
+      flex-shrink: 0;
+    }
+
+    .window-controls {
+      display: flex;
+      height: 100%;
+    }
+
+    .control-btn {
+      width: 46px;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      cursor: pointer;
+      transition: background 0.15s, color 0.15s;
+    }
+
+    .control-btn:hover {
+      background: rgba(255, 255, 255, 0.1);
+      color: var(--text-main);
+    }
+
+    .control-btn.close:hover {
+      background: #e81123 !important;
+      color: #ffffff !important;
+    }
+
+    /* Window Content Area */
+    .window-body {
+      flex: 1;
+      overflow: auto;
+      position: relative;
+      background: transparent;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ==========================================================================
+       WINDOWS 11 TASKBAR
+       ========================================================================== */
+    #taskbar {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 48px;
+      background: var(--taskbar-bg);
+      backdrop-filter: blur(35px) saturate(180%);
+      -webkit-backdrop-filter: blur(35px) saturate(180%);
+      border-top: 1px solid var(--taskbar-border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 12px;
+      z-index: 1000;
+    }
+
+    .taskbar-left {
+      width: 160px;
+      display: flex;
+      align-items: center;
+    }
+
+    .weather-widget {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 4px 8px;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: background 0.15s;
+      font-size: 11.5px;
+    }
+
+    .weather-widget:hover {
+      background: rgba(255, 255, 255, 0.08);
+    }
+
+    /* Centered Taskbar App Dock */
+    #taskbar-apps {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      position: absolute;
+      left: 50%;
+      transform: translateX(-50%);
+    }
+
+    .taskbar-item {
+      width: 40px;
+      height: 40px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      border-radius: 6px;
+      cursor: pointer;
+      position: relative;
+      transition: background 0.15s, transform 0.1s;
+    }
+
+    .taskbar-item:hover {
+      background: rgba(255, 255, 255, 0.1);
+    }
+
+    .taskbar-item:active {
+      transform: scale(0.92);
+    }
+
+    .taskbar-item svg {
+      width: 22px;
+      height: 22px;
+      filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+    }
+
+    .taskbar-item .pill {
+      position: absolute;
+      bottom: 2px;
+      width: 6px;
+      height: 3px;
+      border-radius: 3px;
+      background: var(--text-muted);
+      transition: width 0.2s, background 0.2s;
+    }
+
+    .taskbar-item.active .pill {
+      width: 16px;
+      background: var(--accent-color);
+    }
+
+    /* System Tray */
+    .taskbar-right {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .tray-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 4px 8px;
+      border-radius: 6px;
+      cursor: pointer;
+      height: 36px;
+      transition: background 0.15s;
+    }
+
+    .tray-item:hover {
+      background: rgba(255, 255, 255, 0.08);
+    }
+
+    .tray-clock {
+      text-align: right;
+      line-height: 1.25;
+      font-size: 11.5px;
+    }
+
+    .show-desktop-btn {
+      width: 8px;
+      height: 24px;
+      border-left: 1px solid rgba(255, 255, 255, 0.1);
+      cursor: pointer;
+      margin-left: 4px;
+    }
+
+    /* ==========================================================================
+       START MENU
+       ========================================================================== */
+    #start-menu {
+      position: absolute;
+      bottom: 60px;
+      left: 50%;
+      transform: translateX(-50%) translateY(20px);
+      width: 580px;
+      height: 560px;
+      background: var(--menu-bg);
+      backdrop-filter: blur(40px) saturate(180%);
+      -webkit-backdrop-filter: blur(40px) saturate(180%);
+      border: 1px solid var(--window-border);
+      border-radius: var(--radius-menu);
+      box-shadow: var(--shadow-elevation);
+      display: flex;
+      flex-direction: column;
+      z-index: 999;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.25s cubic-bezier(0.1, 0.9, 0.2, 1), transform 0.25s cubic-bezier(0.1, 0.9, 0.2, 1);
+    }
+
+    #start-menu.open {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+      pointer-events: auto;
+    }
+
+    .start-search-box {
+      margin: 24px 28px 16px;
+      position: relative;
+    }
+
+    .start-search-box input {
+      width: 100%;
+      height: 38px;
+      background: rgba(0, 0, 0, 0.25);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-bottom: 2px solid var(--accent-color);
+      border-radius: 20px;
+      padding: 0 40px;
+      color: var(--text-main);
+      font-size: 13px;
+      outline: none;
+    }
+
+    .start-search-box svg {
+      position: absolute;
+      left: 14px;
+      top: 10px;
+      width: 18px;
+      height: 18px;
+      fill: var(--text-muted);
+    }
+
+    .start-section-title {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0 32px 10px;
+      font-size: 13px;
+      font-weight: 600;
+    }
+
+    .start-apps-grid {
+      display: grid;
+      grid-template-columns: repeat(6, 1fr);
+      gap: 12px;
+      padding: 0 28px 20px;
+      overflow-y: auto;
+      max-height: 220px;
+    }
+
+    .start-app-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      padding: 10px 4px;
+      border-radius: 8px;
+      cursor: pointer;
+      text-align: center;
+      transition: background 0.15s;
+    }
+
+    .start-app-item:hover {
+      background: var(--card-hover);
+    }
+
+    .start-app-item svg {
+      width: 32px;
+      height: 32px;
+    }
+
+    .start-app-item span {
+      font-size: 11.5px;
+      color: var(--text-main);
+    }
+
+    .start-recommended {
+      padding: 10px 32px;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .rec-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 6px 10px;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+
+    .rec-item:hover {
+      background: var(--card-hover);
+    }
+
+    .rec-item svg {
+      width: 24px;
+      height: 24px;
+    }
+
+    .rec-meta {
+      display: flex;
+      flex-direction: column;
+      line-height: 1.25;
+    }
+
+    .rec-meta .title { font-weight: 500; font-size: 12px; }
+    .rec-meta .subtitle { font-size: 11px; color: var(--text-muted); }
+
+    .start-footer {
+      height: 58px;
+      background: rgba(0, 0, 0, 0.2);
+      border-top: 1px solid rgba(255, 255, 255, 0.06);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 32px;
+      border-radius: 0 0 var(--radius-menu) var(--radius-menu);
+    }
+
+    .start-user {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      cursor: pointer;
+      padding: 6px 10px;
+      border-radius: 6px;
+    }
+
+    .start-user:hover { background: rgba(255, 255, 255, 0.08); }
+
+    .user-avatar {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: radial-gradient(circle, #1e293b 0%, #0f172a 100%);
+      border: 1.5px solid rgba(0, 240, 255, 0.6);
+      box-shadow: 0 0 10px rgba(0, 240, 255, 0.35);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 3px;
+    }
+
+    .power-btn {
+      width: 36px;
+      height: 36px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 6px;
+      cursor: pointer;
+      background: transparent;
+      border: none;
+      color: var(--text-main);
+      transition: background 0.15s;
+    }
+
+    .power-btn:hover { background: rgba(255, 255, 255, 0.1); }
+
+    /* ==========================================================================
+       CONTEXT MENU
+       ========================================================================== */
+    #context-menu {
+      position: absolute;
+      display: none;
+      width: 220px;
+      background: var(--menu-bg);
+      backdrop-filter: blur(30px);
+      -webkit-backdrop-filter: blur(30px);
+      border: 1px solid var(--window-border);
+      border-radius: 8px;
+      box-shadow: var(--shadow-elevation);
+      padding: 6px;
+      z-index: 10000;
+    }
+
+    .menu-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 7px 10px;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 12.5px;
+      color: var(--text-main);
+      transition: background 0.15s;
+    }
+
+    .menu-item:hover { background: var(--card-hover); }
+    .menu-separator { height: 1px; background: rgba(255, 255, 255, 0.08); margin: 4px 6px; }
+
+    /* ==========================================================================
+       TOAST NOTIFICATIONS
+       ========================================================================== */
+    #toast-container {
+      position: absolute;
+      bottom: 60px;
+      right: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      z-index: 2000;
+    }
+
+    .toast {
+      width: 320px;
+      background: var(--menu-bg);
+      backdrop-filter: blur(30px);
+      -webkit-backdrop-filter: blur(30px);
+      border: 1px solid var(--window-border);
+      border-radius: 10px;
+      box-shadow: var(--shadow-elevation);
+      padding: 12px 14px;
+      display: flex;
+      gap: 12px;
+      animation: slideIn 0.3s cubic-bezier(0.1, 0.9, 0.2, 1);
+    }
+
+    @keyframes slideIn {
+      from { transform: translateX(120%); opacity: 0; }
+      to { transform: translateX(0); opacity: 1; }
+    }
+
+    /* ==========================================================================
+       STARTUP / BOOT SCREEN (Fancy V Emblem)
+       ========================================================================== */
+    #boot-splash {
+      position: fixed;
+      inset: 0;
+      background: radial-gradient(circle at center, #0B132B 0%, #030712 100%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 99999;
+      transition: opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1), transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+      cursor: pointer;
+    }
+
+    #boot-splash.hidden {
+      opacity: 0;
+      transform: scale(1.06);
+      pointer-events: none;
+      visibility: hidden;
+    }
+
+    .boot-content {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .boot-v {
+      width: 140px;
+      height: 140px;
+      filter: drop-shadow(0 0 35px rgba(0, 240, 255, 0.65));
+      animation: vPulse 2.4s infinite ease-in-out;
+    }
+
+    @keyframes vPulse {
+      0%, 100% {
+        transform: scale(1);
+        filter: drop-shadow(0 0 25px rgba(0, 240, 255, 0.5));
+      }
+      50% {
+        transform: scale(1.05);
+        filter: drop-shadow(0 0 50px rgba(0, 240, 255, 0.9)) drop-shadow(0 0 80px rgba(0, 120, 212, 0.5));
+      }
+    }
+
+    .boot-title {
+      font-size: 28px;
+      font-weight: 700;
+      letter-spacing: 10px;
+      color: #F8FAFC;
+      text-shadow: 0 0 25px rgba(0, 240, 255, 0.6);
+      margin-top: 12px;
+      padding-left: 10px; /* balance letter-spacing */
+    }
+
+    .boot-subtitle {
+      font-size: 13px;
+      color: #94A3B8;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      font-weight: 400;
+    }
+
+    .boot-loader {
+      display: flex;
+      gap: 10px;
+      margin-top: 28px;
+    }
+
+    .boot-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #00F0FF;
+      box-shadow: 0 0 12px #00F0FF;
+      animation: bootDotPulse 1.2s infinite ease-in-out;
+    }
+
+    .boot-dot:nth-child(2) { animation-delay: 0.15s; }
+    .boot-dot:nth-child(3) { animation-delay: 0.3s; }
+    .boot-dot:nth-child(4) { animation-delay: 0.45s; }
+    .boot-dot:nth-child(5) { animation-delay: 0.6s; }
+
+    @keyframes bootDotPulse {
+      0%, 100% { transform: scale(0.6); opacity: 0.3; }
+      50% { transform: scale(1.3); opacity: 1; }
+    }
+
+    /* ==========================================================================
+       LOCK / LOGIN SCREEN
+       ========================================================================== */
+    #lock-screen {
+      position: absolute;
+      inset: 0;
+      background-size: cover;
+      background-position: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 50000;
+      transition: opacity 0.4s ease, transform 0.4s ease;
+    }
+
+    #lock-screen.unlocked {
+      opacity: 0;
+      transform: translateY(-40px);
+      pointer-events: none;
+    }
+
+    .lock-time {
+      font-size: 76px;
+      font-weight: 300;
+      letter-spacing: -2px;
+      margin-bottom: 4px;
+      text-shadow: 0 4px 20px rgba(0, 0, 0, 0.6);
+    }
+
+    .lock-date {
+      font-size: 20px;
+      font-weight: 400;
+      margin-bottom: 40px;
+      text-shadow: 0 2px 10px rgba(0, 0, 0, 0.6);
+    }
+
+    .login-box {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 14px;
+      background: rgba(0, 0, 0, 0.45);
+      backdrop-filter: blur(30px);
+      padding: 30px 40px;
+      border-radius: 16px;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      box-shadow: var(--shadow-elevation);
+    }
+
+    .login-avatar {
+      width: 86px;
+      height: 86px;
+      border-radius: 50%;
+      background: radial-gradient(circle, #1e293b 0%, #0f172a 100%);
+      border: 2px solid rgba(0, 240, 255, 0.7);
+      box-shadow: 0 0 25px rgba(0, 240, 255, 0.4), inset 0 0 15px rgba(0, 120, 212, 0.3);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 8px;
+      animation: vAvatarGlow 3s infinite ease-in-out;
+    }
+
+    @keyframes vAvatarGlow {
+      0%, 100% { box-shadow: 0 0 20px rgba(0, 240, 255, 0.35); }
+      50% { box-shadow: 0 0 35px rgba(0, 240, 255, 0.75), 0 0 60px rgba(0, 120, 212, 0.4); }
+    }
+
+    .fancy-v-logo {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+
+    #btn-start:hover .start-v {
+      transform: scale(1.15);
+      filter: drop-shadow(0 0 8px rgba(0, 240, 255, 0.85));
+    }
+
+    .start-v {
+      transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), filter 0.2s ease;
+    }
+
+    .login-name { font-size: 18px; font-weight: 500; }
+
+    .login-input-row {
+      display: flex;
+      align-items: center;
+      position: relative;
+    }
+
+    .login-input {
+      width: 220px;
+      height: 36px;
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 6px;
+      padding: 0 36px 0 12px;
+      color: white;
+      outline: none;
+    }
+
+    .login-btn {
+      position: absolute;
+      right: 4px;
+      width: 28px;
+      height: 28px;
+      border-radius: 4px;
+      background: var(--accent-color);
+      border: none;
+      color: white;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* ==========================================================================
+       APP IMPLEMENTATIONS (Terminal, Explorer, Notepad, Paint, Browser, etc.)
+       ========================================================================== */
+    /* Terminal */
+    .terminal-body {
+      background: #0c0c0c;
+      color: #cccccc;
+      font-family: 'Cascadia Code', 'Consolas', monospace;
+      font-size: 13px;
+      padding: 12px;
+      flex: 1;
+      overflow-y: auto;
+      white-space: pre-wrap;
+      line-height: 1.4;
+    }
+
+    .terminal-input-line {
+      display: flex;
+      align-items: center;
+    }
+
+    .terminal-prompt { color: #22c55e; margin-right: 8px; }
+    .terminal-input {
+      background: transparent;
+      border: none;
+      color: #ffffff;
+      font-family: inherit;
+      font-size: inherit;
+      flex: 1;
+      outline: none;
+    }
+
+    /* Notepad */
+    .notepad-menubar {
+      display: flex;
+      background: var(--window-header);
+      padding: 2px 8px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+      gap: 12px;
+      font-size: 12px;
+    }
+
+    .notepad-menu-btn {
+      padding: 3px 6px;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    .notepad-menu-btn:hover { background: rgba(255, 255, 255, 0.08); }
+
+    .notepad-textarea {
+      flex: 1;
+      background: transparent;
+      border: none;
+      outline: none;
+      padding: 12px;
+      color: var(--text-main);
+      font-family: 'Consolas', monospace;
+      font-size: 13.5px;
+      resize: none;
+      line-height: 1.5;
+    }
+
+    .notepad-statusbar {
+      height: 24px;
+      background: var(--window-header);
+      border-top: 1px solid rgba(255, 255, 255, 0.06);
+      display: flex;
+      justify-content: flex-end;
+      align-items: center;
+      padding: 0 16px;
+      font-size: 11px;
+      color: var(--text-muted);
+      gap: 20px;
+    }
+
+    /* File Explorer */
+    .explorer-toolbar {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 6px 12px;
+      background: var(--window-header);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    }
+
+    .explorer-address {
+      flex: 1;
+      height: 28px;
+      background: rgba(0, 0, 0, 0.2);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 4px;
+      display: flex;
+      align-items: center;
+      padding: 0 10px;
+      gap: 8px;
+      font-size: 12px;
+    }
+
+    .explorer-main {
+      display: flex;
+      flex: 1;
+      overflow: hidden;
+    }
+
+    .explorer-sidebar {
+      width: 170px;
+      background: rgba(0, 0, 0, 0.15);
+      border-right: 1px solid rgba(255, 255, 255, 0.06);
+      padding: 10px 6px;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .sidebar-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 8px;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 12px;
+    }
+
+    .sidebar-item:hover { background: var(--card-hover); }
+    .sidebar-item.active { background: rgba(0, 120, 212, 0.25); color: var(--accent-color); font-weight: 500; }
+
+    .explorer-content {
+      flex: 1;
+      padding: 16px;
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
+      gap: 16px;
+      overflow-y: auto;
+      align-content: flex-start;
+    }
+
+    .file-card {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      padding: 10px 4px;
+      border-radius: 6px;
+      cursor: pointer;
+      text-align: center;
+    }
+
+    .file-card:hover { background: var(--card-hover); }
+
+    /* Paint */
+    .paint-toolbar {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 12px;
+      background: var(--window-header);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+      flex-wrap: wrap;
+    }
+
+    .tool-btn {
+      padding: 4px 8px;
+      border-radius: 4px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      background: var(--card-bg);
+      color: var(--text-main);
+      cursor: pointer;
+      font-size: 11.5px;
+    }
+
+    .tool-btn.active {
+      background: var(--accent-color);
+      border-color: var(--accent-color);
+    }
+
+    .color-swatch {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      cursor: pointer;
+      border: 2px solid rgba(255, 255, 255, 0.4);
+    }
+
+    .paint-canvas-container {
+      flex: 1;
+      background: #333;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: auto;
+      padding: 20px;
+    }
+
+    #paint-canvas {
+      background: #ffffff;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+      cursor: crosshair;
+    }
+
+    /* Calculator */
+    .calc-display {
+      height: 80px;
+      padding: 16px 20px;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+      align-items: flex-end;
+      background: transparent;
+    }
+
+    .calc-prev { font-size: 13px; color: var(--text-muted); }
+    .calc-main { font-size: 34px; font-weight: 600; letter-spacing: -1px; }
+
+    .calc-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 4px;
+      padding: 8px;
+      flex: 1;
+    }
+
+    .calc-btn {
+      border: none;
+      border-radius: 6px;
+      background: var(--card-bg);
+      color: var(--text-main);
+      font-size: 15px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+
+    .calc-btn:hover { background: var(--card-hover); }
+    .calc-btn.op { background: rgba(255, 255, 255, 0.08); font-weight: 600; }
+    .calc-btn.eq { background: var(--accent-color); color: #fff; font-weight: 600; }
+    .calc-btn.eq:hover { background: var(--accent-hover); }
+
+    /* Task Manager */
+    .taskmgr-header {
+      display: flex;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      background: var(--window-header);
+    }
+
+    .taskmgr-tab {
+      padding: 8px 16px;
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      font-weight: 500;
+    }
+
+    .taskmgr-tab.active {
+      border-bottom-color: var(--accent-color);
+      color: var(--accent-color);
+    }
+
+    .taskmgr-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+    }
+
+    .taskmgr-table th {
+      text-align: left;
+      padding: 8px 12px;
+      background: rgba(0, 0, 0, 0.15);
+      font-weight: 600;
+      color: var(--text-muted);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    }
+
+    .taskmgr-table td {
+      padding: 8px 12px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+    }
+
+    .taskmgr-table tr:hover { background: var(--card-hover); cursor: pointer; }
+    .taskmgr-table tr.selected { background: rgba(0, 120, 212, 0.25); }
+
+    /* Browser */
+    .browser-toolbar {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 12px;
+      background: var(--window-header);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    }
+
+    .browser-url-input {
+      flex: 1;
+      height: 30px;
+      background: rgba(0, 0, 0, 0.2);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 15px;
+      padding: 0 16px;
+      color: var(--text-main);
+      outline: none;
+      font-size: 12.5px;
+    }
+
+    .browser-iframe {
+      flex: 1;
+      border: none;
+      background: white;
+    }
+
+    /* Doom Canvas */
+    .doom-container {
+      flex: 1;
+      background: #000;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+    }
+
+    #doom-canvas {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .doom-hud {
+      position: absolute;
+      bottom: 10px;
+      display: flex;
+      gap: 30px;
+      background: rgba(180, 20, 20, 0.7);
+      padding: 6px 20px;
+      border-radius: 8px;
+      font-family: monospace;
+      font-size: 16px;
+      font-weight: bold;
+      color: yellow;
+      border: 2px solid red;
+    }
+
+    /* Settings View */
+    .settings-container {
+      display: flex;
+      flex: 1;
+      height: 100%;
+    }
+
+    .settings-sidebar {
+      width: 200px;
+      background: rgba(0, 0, 0, 0.15);
+      border-right: 1px solid rgba(255, 255, 255, 0.06);
+      padding: 16px 8px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .settings-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 12px;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+
+    .settings-item:hover { background: var(--card-hover); }
+    .settings-item.active { background: rgba(0, 120, 212, 0.25); color: var(--accent-color); font-weight: 600; }
+
+    .settings-content {
+      flex: 1;
+      padding: 24px;
+      overflow-y: auto;
+    }
+
+    .wallpaper-preview-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+      gap: 14px;
+      margin-top: 14px;
+    }
+
+    .wp-card {
+      height: 90px;
+      border-radius: 8px;
+      background-size: cover;
+      background-position: center;
+      cursor: pointer;
+      border: 2px solid transparent;
+      transition: transform 0.15s, border-color 0.15s;
+    }
+
+    .wp-card:hover { transform: scale(1.03); }
+    .wp-card.active { border-color: var(--accent-color); }
+  </style>
+</head>
+<body>
+
+  <!-- ==========================================================================
+       GLOBAL FANCY V LOGO DEFINITIONS
+       ========================================================================== -->
+  <svg style="display:none" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <linearGradient id="vGradLeftGlobal" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" stop-color="#00F0FF" />
+        <stop offset="40%" stop-color="#00A2ED" />
+        <stop offset="100%" stop-color="#005A9E" />
+      </linearGradient>
+      <linearGradient id="vGradRightGlobal" x1="100%" y1="0%" x2="0%" y2="100%">
+        <stop offset="0%" stop-color="#38BDF8" />
+        <stop offset="50%" stop-color="#1D4ED8" />
+        <stop offset="100%" stop-color="#7C3AED" />
+      </linearGradient>
+      <linearGradient id="vRingGradGlobal" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" stop-color="#00F0FF" />
+        <stop offset="50%" stop-color="#0078D4" />
+        <stop offset="100%" stop-color="#A855F7" />
+      </linearGradient>
+      <filter id="vGlowGlobal" x="-20%" y="-20%" width="140%" height="140%">
+        <feGaussianBlur stdDeviation="2.5" result="blur" />
+        <feComposite in="SourceGraphic" in2="blur" operator="over" />
+      </filter>
+      <g id="fancy-v-symbol">
+        <!-- Outer Glowing Accent Shield/Ring -->
+        <circle cx="50" cy="50" r="45" fill="none" stroke="url(#vRingGradGlobal)" stroke-width="2.5" opacity="0.9" />
+        <circle cx="50" cy="50" r="41" fill="none" stroke="#00F0FF" stroke-width="0.8" opacity="0.45" stroke-dasharray="4 3" />
+        <!-- Left Wing Blade -->
+        <polygon points="50,82 42,62 18,28 32,24 45,48 50,48" fill="url(#vGradLeftGlobal)" filter="url(#vGlowGlobal)" />
+        <polyline points="18,28 32,24 50,82" fill="none" stroke="#E0F2FE" stroke-width="1.2" opacity="0.95" />
+        <!-- Right Wing Blade -->
+        <polygon points="50,82 50,48 55,48 68,24 82,28 58,62" fill="url(#vGradRightGlobal)" filter="url(#vGlowGlobal)" />
+        <polyline points="82,28 68,24 50,82" fill="none" stroke="#BAE6FD" stroke-width="1.2" opacity="0.95" />
+        <!-- Center Spine Ridge -->
+        <line x1="50" y1="46" x2="50" y2="82" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round" />
+        <!-- Crown Chevron Accent -->
+        <polygon points="50,34 42,26 50,29 58,26" fill="#00F0FF" opacity="0.95" />
+      </g>
+    </defs>
+  </svg>
+
+  <!-- ==========================================================================
+       STARTUP / BOOT SCREEN (Fancy V Emblem)
+       ========================================================================== -->
+  <div id="boot-splash" title="Click or press any key to enter">
+    <div class="boot-content">
+      <svg class="fancy-v-logo boot-v" viewBox="0 0 100 100">
+        <use href="#fancy-v-symbol"/>
+      </svg>
+      <div class="boot-title">VEYRON OS</div>
+      <div class="boot-subtitle">Modern Web Desktop Experience</div>
+      <div class="boot-loader">
+        <div class="boot-dot"></div>
+        <div class="boot-dot"></div>
+        <div class="boot-dot"></div>
+        <div class="boot-dot"></div>
+        <div class="boot-dot"></div>
+      </div>
+    </div>
+  </div>
+
+  
+
+  <!-- ==========================================================================
+       LOCK / LOGIN SCREEN
+       ========================================================================== -->
+  <div id="lock-screen">
+    <div class="lock-time" id="lock-clock">12:00</div>
+    <div class="lock-date" id="lock-calendar">Tuesday, October 20</div>
+    <div class="login-box">
+      <div class="login-avatar">
+        <svg class="fancy-v-logo" viewBox="0 0 100 100">
+          <use href="#fancy-v-symbol"/>
+        </svg>
+      </div>
+      <div class="login-name">Default User</div>
+      <div class="login-input-row">
+        <input type="password" id="login-pass" class="login-input" placeholder="PIN / Password" value="veyron">
+        <button class="login-btn" id="login-submit" title="Sign In">➔</button>
+      </div>
+      <span style="font-size: 11px; color: var(--text-muted);">Press Enter to Login</span>
+    </div>
+  </div>
+
+  <!-- ==========================================================================
+       MAIN DESKTOP
+       ========================================================================== -->
+  <div id="desktop">
+    <div id="selection-box"></div>
+
+    <!-- Desktop Icons -->
+    <div id="desktop-icons">
+      <div class="desktop-icon" data-app="explorer" tabindex="0">
+        <svg viewBox="0 0 48 48">
+          <path fill="#FFA000" d="M40 12H22l-4-4H8c-2.2 0-4 1.8-4 4v24c0 2.2 1.8 4 4 4h32c2.2 0 4-1.8 4-4V16c0-2.2-1.8-4-4-4z"/>
+          <path fill="#FFCA28" d="M40 14H8c-2.2 0-4 1.8-4 4v20c0 2.2 1.8 4 4 4h32c2.2 0 4-1.8 4-4V18c0-2.2-1.8-4-4-4z"/>
+          <path fill="#0078D4" d="M8 20h32v18H8z" opacity="0.3"/>
+        </svg>
+        <span>This PC</span>
+      </div>
+
+      <div class="desktop-icon" data-app="terminal" tabindex="0">
+        <svg viewBox="0 0 48 48">
+          <rect width="42" height="34" x="3" y="7" fill="#18181B" rx="4"/>
+          <path fill="none" stroke="#22C55E" stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="m11 17 6 7-6 7"/>
+          <path stroke="#F8FAFC" stroke-linecap="round" stroke-width="3" d="M22 31h12"/>
+        </svg>
+        <span>Terminal</span>
+      </div>
+
+      <div class="desktop-icon" data-app="notepad" tabindex="0">
+        <svg viewBox="0 0 48 48">
+          <path fill="#0078D4" d="M38 6H14c-2.2 0-4 1.8-4 4v28c0 2.2 1.8 4 4 4h24c2.2 0 4-1.8 4-4V10c0-2.2-1.8-4-4-4z"/>
+          <path fill="#FFFFFF" d="M14 8h24v32H14z"/>
+          <path fill="#94A3B8" d="M18 14h16v2H18zm0 6h16v2H18zm0 6h16v2H18zm0 6h10v2H18z"/>
+        </svg>
+        <span>Notepad</span>
+      </div>
+
+      <div class="desktop-icon" data-app="paint" tabindex="0">
+        <svg viewBox="0 0 48 48">
+          <path fill="#D97706" d="M24 4C12.95 4 4 12.95 4 24s8.95 20 20 20c2.76 0 5-2.24 5-5 0-1.29-.49-2.46-1.29-3.34-.78-.87-1.27-2-1.27-3.27 0-2.76 2.24-5 5-5h5.83c6.45 0 11.73-5.28 11.73-11.73C43.27 8.84 34.62 4 24 4z"/>
+          <circle cx="13" cy="18" r="3.5" fill="#EF4444"/>
+          <circle cx="21" cy="12" r="3.5" fill="#3B82F6"/>
+          <circle cx="31" cy="13" r="3.5" fill="#10B981"/>
+          <circle cx="27" cy="27" r="3.5" fill="#F59E0B"/>
+        </svg>
+        <span>Paint</span>
+      </div>
+
+      <div class="desktop-icon" data-app="browser" tabindex="0">
+        <svg viewBox="0 0 48 48">
+          <circle cx="24" cy="24" r="20" fill="#0284C7"/>
+          <circle cx="24" cy="24" r="19" fill="#0078D4"/>
+          <path fill="#38BDF8" d="M24 4a20 20 0 0 0-16 8l16 12 16-12A20 20 0 0 0 24 4z"/>
+          <circle cx="24" cy="24" r="14" fill="none" stroke="#FFFFFF" stroke-width="2"/>
+          <path fill="none" stroke="#FFFFFF" stroke-width="2" d="M4 24h40M24 4a30 30 0 0 0 0 40 30 30 0 0 0 0-40"/>
+        </svg>
+        <span>Browser</span>
+      </div>
+
+      <div class="desktop-icon" data-app="calculator" tabindex="0">
+        <svg viewBox="0 0 48 48">
+          <rect width="36" height="42" x="6" y="3" fill="#334155" rx="6"/>
+          <rect width="28" height="10" x="10" y="7" fill="#0078D4" rx="2"/>
+          <circle cx="15" cy="23" r="2.5" fill="#94A3B8"/>
+          <circle cx="24" cy="23" r="2.5" fill="#94A3B8"/>
+          <circle cx="33" cy="23" r="2.5" fill="#0078D4"/>
+          <circle cx="15" cy="30" r="2.5" fill="#94A3B8"/>
+          <circle cx="24" cy="30" r="2.5" fill="#94A3B8"/>
+          <circle cx="33" cy="30" r="2.5" fill="#0078D4"/>
+          <circle cx="15" cy="37" r="2.5" fill="#94A3B8"/>
+          <circle cx="24" cy="37" r="2.5" fill="#94A3B8"/>
+          <circle cx="33" cy="37" r="2.5" fill="#22C55E"/>
+        </svg>
+        <span>Calculator</span>
+      </div>
+
+      <div class="desktop-icon" data-app="taskmgr" tabindex="0">
+        <svg viewBox="0 0 48 48">
+          <rect width="40" height="36" x="4" y="6" fill="#1E293B" rx="5"/>
+          <path fill="none" stroke="#22C55E" stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M8 26h6l4-12 6 22 5-14 4 8h7"/>
+        </svg>
+        <span>Task Manager</span>
+      </div>
+
+      <div class="desktop-icon" data-app="settings" tabindex="0">
+        <svg viewBox="0 0 48 48">
+          <circle cx="24" cy="24" r="8" fill="#94A3B8"/>
+          <path fill="#64748B" d="M40 22h-3.3a13 13 0 0 0-1.8-4.3l2.3-2.3a2 2 0 0 0 0-2.8l-2.8-2.8a2 2 0 0 0-2.8 0l-2.3 2.3a13 13 0 0 0-4.3-1.8V7a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v3.3a13 13 0 0 0-4.3 1.8l-2.3-2.3a2 2 0 0 0-2.8 0L4.8 12.6a2 2 0 0 0 0 2.8l2.3 2.3A13 13 0 0 0 5.3 22H2a2 2 0 0 0-2 2v4a2 2 0 0 0 2 2h3.3a13 13 0 0 0 1.8 4.3l-2.3 2.3a2 2 0 0 0 0 2.8l2.8 2.8a2 2 0 0 0 2.8 0l2.3-2.3a13 13 0 0 0 4.3 1.8V41a2 2 0 0 0 2 2h4a2 2 0 0 0 2-2v-3.3a13 13 0 0 0 4.3-1.8l2.3 2.3a2 2 0 0 0 2.8 0l2.8-2.8a2 2 0 0 0 0-2.8l-2.3-2.3a13 13 0 0 0 1.8-4.3H40a2 2 0 0 0 2-2v-4a2 2 0 0 0-2-2zM24 30a6 6 0 1 1 0-12 6 6 0 0 1 0 12z"/>
+        </svg>
+        <span>Settings</span>
+      </div>
+
+      <div class="desktop-icon" data-app="doom" tabindex="0">
+        <svg viewBox="0 0 48 48">
+          <rect width="40" height="38" x="4" y="5" fill="#991B1B" rx="6"/>
+          <path fill="#F87171" d="M12 12h24v24H12z"/>
+          <circle cx="19" cy="20" r="3" fill="#000000"/>
+          <circle cx="29" cy="20" r="3" fill="#000000"/>
+          <path fill="#FFFFFF" d="M16 28h16v4H16z"/>
+        </svg>
+        <span>DOOM</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==========================================================================
+       START MENU
+       ========================================================================== -->
+  <div id="start-menu">
+    <div class="start-search-box">
+      <svg viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
+      <input type="text" id="start-search-input" placeholder="Type here to search apps, files, settings...">
+    </div>
+
+    <div class="start-section-title">
+      <span>Pinned</span>
+      <button class="tool-btn" style="padding: 2px 8px;">All apps ></button>
+    </div>
+
+    <div class="start-apps-grid" id="start-grid">
+      <!-- Pinned items populated dynamically -->
+    </div>
+
+    <div class="start-section-title" style="margin-top: 10px;">
+      <span>Recommended</span>
+      <button class="tool-btn" style="padding: 2px 8px;">More ></button>
+    </div>
+
+    <div class="start-recommended">
+      <div class="rec-item" data-app="notepad">
+        <svg viewBox="0 0 48 48"><path fill="#0078D4" d="M38 6H14c-2.2 0-4 1.8-4 4v28c0 2.2 1.8 4 4 4h24c2.2 0 4-1.8 4-4V10c0-2.2-1.8-4-4-4z"/><path fill="#FFF" d="M14 8h24v32H14z"/></svg>
+        <div class="rec-meta">
+          <span class="title">Welcome.txt</span>
+          <span class="subtitle">Recently edited • C:\Users\Default\Desktop</span>
+        </div>
+      </div>
+      <div class="rec-item" data-app="terminal">
+        <svg viewBox="0 0 48 48"><rect width="42" height="34" x="3" y="7" fill="#18181B" rx="4"/><path fill="none" stroke="#22C55E" stroke-width="3" d="m11 17 6 7-6 7"/></svg>
+        <div class="rec-meta">
+          <span class="title">Veyron CMD Shell</span>
+          <span class="subtitle">Frequently used terminal application</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="start-footer">
+      <div class="start-user">
+        <div class="user-avatar">
+          <svg class="fancy-v-logo" viewBox="0 0 100 100">
+            <use href="#fancy-v-symbol"/>
+          </svg>
+        </div>
+        <span style="font-weight: 500;">Default User</span>
+      </div>
+      <button class="power-btn" id="start-power-btn" title="Power">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+          <path d="M13 3h-2v10h2V3zm4.83 2.17l-1.42 1.42A7.92 7.92 0 0 1 20 12c0 4.42-3.58 8-8 8s-8-3.58-8-8c0-2.47 1.13-4.67 2.91-6.14L5.49 4.44A9.935 9.935 0 0 0 2 12c0 5.52 4.48 10 10 10s10-4.48 10-10c0-2.97-1.3-5.63-3.17-7.83z"/>
+        </svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- ==========================================================================
+       TASKBAR
+       ========================================================================== -->
+  <div id="taskbar">
+    <div class="taskbar-left">
+      <div class="weather-widget">
+        <span style="font-size: 16px;">⛅</span>
+        <span>72°F Mostly Sunny</span>
+      </div>
+    </div>
+
+    <div id="taskbar-apps">
+      <!-- Start Button (Fancy V Logo) -->
+      <div class="taskbar-item" id="taskbar-start" title="Start (Veyron OS)">
+        <svg class="start-v" viewBox="0 0 100 100" width="22" height="22">
+          <use href="#fancy-v-symbol"/>
+        </svg>
+      </div>
+
+      <!-- App Taskbar Icons -->
+      <div class="taskbar-item" data-app="explorer" title="File Explorer">
+        <svg viewBox="0 0 48 48"><path fill="#FFA000" d="M40 12H22l-4-4H8c-2.2 0-4 1.8-4 4v24c0 2.2 1.8 4 4 4h32c2.2 0 4-1.8 4-4V16c0-2.2-1.8-4-4-4z"/><path fill="#FFCA28" d="M40 14H8c-2.2 0-4 1.8-4 4v20c0 2.2 1.8 4 4 4h32c2.2 0 4-1.8 4-4V18c0-2.2-1.8-4-4-4z"/></svg>
+        <div class="pill"></div>
+      </div>
+
+      <div class="taskbar-item" data-app="terminal" title="Terminal">
+        <svg viewBox="0 0 48 48"><rect width="42" height="34" x="3" y="7" fill="#18181B" rx="4"/><path fill="none" stroke="#22C55E" stroke-width="3" d="m11 17 6 7-6 7"/><path stroke="#F8FAFC" stroke-width="3" d="M22 31h12"/></svg>
+        <div class="pill"></div>
+      </div>
+
+      <div class="taskbar-item" data-app="notepad" title="Notepad">
+        <svg viewBox="0 0 48 48"><path fill="#0078D4" d="M38 6H14c-2.2 0-4 1.8-4 4v28c0 2.2 1.8 4 4 4h24c2.2 0 4-1.8 4-4V10c0-2.2-1.8-4-4-4z"/><path fill="#FFF" d="M14 8h24v32H14z"/></svg>
+        <div class="pill"></div>
+      </div>
+
+      <div class="taskbar-item" data-app="paint" title="Paint">
+        <svg viewBox="0 0 48 48"><path fill="#D97706" d="M24 4C12.95 4 4 12.95 4 24s8.95 20 20 20c2.76 0 5-2.24 5-5 0-1.29-.49-2.46-1.29-3.34-.78-.87-1.27-2-1.27-3.27 0-2.76 2.24-5 5-5h5.83c6.45 0 11.73-5.28 11.73-11.73C43.27 8.84 34.62 4 24 4z"/><circle cx="13" cy="18" r="3.5" fill="#EF4444"/><circle cx="21" cy="12" r="3.5" fill="#3B82F6"/><circle cx="31" cy="13" r="3.5" fill="#10B981"/></svg>
+        <div class="pill"></div>
+      </div>
+
+      <div class="taskbar-item" data-app="browser" title="Browser">
+        <svg viewBox="0 0 48 48"><circle cx="24" cy="24" r="20" fill="#0078D4"/><circle cx="24" cy="24" r="14" fill="none" stroke="#FFF" stroke-width="2"/><path fill="none" stroke="#FFF" stroke-width="2" d="M4 24h40M24 4a30 30 0 0 0 0 40 30 30 0 0 0 0-40"/></svg>
+        <div class="pill"></div>
+      </div>
+
+      <div class="taskbar-item" data-app="calculator" title="Calculator">
+        <svg viewBox="0 0 48 48"><rect width="36" height="42" x="6" y="3" fill="#334155" rx="6"/><rect width="28" height="10" x="10" y="7" fill="#0078D4" rx="2"/></svg>
+        <div class="pill"></div>
+      </div>
+
+      <div class="taskbar-item" data-app="taskmgr" title="Task Manager">
+        <svg viewBox="0 0 48 48"><rect width="40" height="36" x="4" y="6" fill="#1E293B" rx="5"/><path fill="none" stroke="#22C55E" stroke-width="3" d="M8 26h6l4-12 6 22 5-14 4 8h7"/></svg>
+        <div class="pill"></div>
+      </div>
+
+      <div class="taskbar-item" data-app="settings" title="Settings">
+        <svg viewBox="0 0 48 48"><circle cx="24" cy="24" r="8" fill="#94A3B8"/><path fill="#64748B" d="M40 22h-3.3a13 13 0 0 0-1.8-4.3l2.3-2.3a2 2 0 0 0 0-2.8l-2.8-2.8a2 2 0 0 0-2.8 0l-2.3 2.3a13 13 0 0 0-4.3-1.8V7a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v3.3a13 13 0 0 0-4.3 1.8l-2.3-2.3a2 2 0 0 0-2.8 0L4.8 12.6a2 2 0 0 0 0 2.8l2.3 2.3A13 13 0 0 0 5.3 22H2a2 2 0 0 0-2 2v4a2 2 0 0 0 2 2h3.3a13 13 0 0 0 1.8 4.3l-2.3 2.3a2 2 0 0 0 0 2.8l2.8 2.8a2 2 0 0 0 2.8 0l2.3-2.3a13 13 0 0 0 4.3 1.8V41a2 2 0 0 0 2 2h4a2 2 0 0 0 2-2v-3.3a13 13 0 0 0 4.3-1.8l2.3 2.3a2 2 0 0 0 2.8 0l2.8-2.8a2 2 0 0 0 0-2.8l-2.3-2.3a13 13 0 0 0 1.8-4.3H40a2 2 0 0 0 2-2v-4a2 2 0 0 0-2-2zM24 30a6 6 0 1 1 0-12 6 6 0 0 1 0 12z"/></svg>
+        <div class="pill"></div>
+      </div>
+
+      <div class="taskbar-item" data-app="doom" title="DOOM">
+        <svg viewBox="0 0 48 48"><rect width="40" height="38" x="4" y="5" fill="#991B1B" rx="6"/><path fill="#F87171" d="M12 12h24v24H12z"/><circle cx="19" cy="20" r="3" fill="#000"/><circle cx="29" cy="20" r="3" fill="#000"/></svg>
+        <div class="pill"></div>
+      </div>
+    </div>
+
+    <div class="taskbar-right">
+      <div class="tray-item" id="tray-quick">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M12 3c-4.97 0-9 4.03-9 9 0 2.12.74 4.07 1.97 5.61L4.35 19H7.6l.82-.82C9.46 18.66 10.69 19 12 19c4.97 0 9-4.03 9-9s-4.03-9-9-9zm0 14c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5z"/></svg>
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg>
+      </div>
+      <div class="tray-item" id="tray-calendar">
+        <div class="tray-clock">
+          <div id="tray-time">12:00 PM</div>
+          <div id="tray-date">10/20/2026</div>
+        </div>
+      </div>
+      <div class="show-desktop-btn" id="show-desktop" title="Show Desktop"></div>
+    </div>
+  </div>
+
+  <!-- ==========================================================================
+       RIGHT CLICK CONTEXT MENU
+       ========================================================================== -->
+  <div id="context-menu">
+    <div class="menu-item" data-action="refresh">
+      <span>🔄</span> <span>Refresh</span>
+    </div>
+    <div class="menu-separator"></div>
+    <div class="menu-item" data-action="new-folder">
+      <span>📁</span> <span>New folder</span>
+    </div>
+    <div class="menu-item" data-action="open-app" data-app="notepad">
+      <span>📝</span> <span>New Text Document</span>
+    </div>
+    <div class="menu-separator"></div>
+    <div class="menu-item" data-action="open-app" data-app="terminal">
+      <span>💻</span> <span>Open in Terminal</span>
+    </div>
+    <div class="menu-item" data-action="open-app" data-app="settings">
+      <span>🎨</span> <span>Personalize</span>
+    </div>
+  </div>
+
+  <!-- Toast Notification Container -->
+  <div id="toast-container"></div>
+
+  <!-- ==========================================================================
+       JAVASCRIPT ARCHITECTURE & OPERATING SYSTEM ENGINE
+       ========================================================================== -->
+  
+  <script src="app.js" defer></script>
+</body>
+</html>
