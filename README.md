@@ -15,6 +15,18 @@
   <img src="https://img.shields.io/badge/License-MIT-green?style=for-the-badge" alt="License" />
 </p>
 
+<p align="center">
+  <a href="https://aqua-code750.github.io/veyron-os/">
+    <img src="https://img.shields.io/badge/▶️_Try_Live_Web_Demo-Online-00F0FF?style=for-the-badge" alt="Try Live Demo" />
+  </a>
+  <a href="https://github.com/Aqua-code750/veyron-os/releases/download/v1.0.0/veyron-os-extension.zip">
+    <img src="https://img.shields.io/badge/⬇️_Download_Chrome_Extension-ZIP-0078D4?style=for-the-badge&logo=googlechrome&logoColor=white" alt="Download Extension ZIP" />
+  </a>
+  <a href="https://github.com/Aqua-code750/veyron-os/archive/refs/heads/master.zip">
+    <img src="https://img.shields.io/badge/📦_Download_Repository-ZIP-10B981?style=for-the-badge&logo=github&logoColor=white" alt="Download Repo ZIP" />
+  </a>
+</p>
+
 ---
 
 ## 🌟 Highlights
